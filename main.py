@@ -58,8 +58,8 @@ def get_config():
 def check_config():
     """Fail fast with an actionable message for unsupported provider settings."""
     cfg = get_config()
-    if cfg["llm_provider"] not in ("gemini", "openai"):
-        raise HTTPException(500, f"Unsupported LLM_PROVIDER={cfg['llm_provider']!r}. Set LLM_PROVIDER to 'gemini' or 'openai' in .env (see .env.example).")
+    if cfg["llm_provider"] not in ("gemini", "openai", "groq"):
+        raise HTTPException(500, f"Unsupported LLM_PROVIDER={cfg['llm_provider']!r}. Set LLM_PROVIDER to 'gemini', 'openai' or 'groq' in .env (see .env.example).")
     if cfg["embedding_provider"] not in ("local", "openai"):
         raise HTTPException(500, f"Unsupported EMBEDDING_PROVIDER={cfg['embedding_provider']!r}. Set EMBEDDING_PROVIDER to 'local' or 'openai' in .env (see .env.example).")
     if cfg["ocr_provider"] not in ("local",):
@@ -292,7 +292,7 @@ def llm_with_system(system, user):
     prov, key = cfg["llm_provider"], os.getenv("LLM_API_KEY")
     if not key:
         raise HTTPException(500, "LLM_API_KEY is not set. Copy .env.example to .env and add a key.")
-    model = os.getenv("LLM_MODEL", "") or ("gemini-2.5-flash" if prov == "gemini" else "gpt-5-mini")
+    model = os.getenv("LLM_MODEL", "") or ({"gemini": "gemini-3.8-flash", "groq": "llama-3.3-70b-versatile"}.get(prov, "gpt-5-mini"))
     try:
         if prov == "gemini":
             r = httpx.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
@@ -307,9 +307,10 @@ def llm_with_system(system, user):
                 log.warning("Unexpected Gemini response shape: %s", r.text[:300])
                 raise HTTPException(502, f"The model ({model}) returned an unexpected response shape. Check the model name and try again.") from e
         else:
-            r = httpx.post("https://api.openai.com/v1/chat/completions", headers={"Authorization": f"Bearer {key}"}, timeout=90,
+            url = "https://api.groq.com/openai/v1/chat/completions" if prov == "groq" else "https://api.openai.com/v1/chat/completions"
+            r = httpx.post(url, headers={"Authorization": f"Bearer {key}"}, timeout=90,
                            json={"model": model, "response_format": {"type": "json_object"},
-                                 "messages": [{"role": "system", "content": SYSTEM}, {"role": "user", "content": user}]})
+                                 "messages": [{"role": "system", "content": system}, {"role": "user", "content": user}]})
             r.raise_for_status()
             try:
                 txt = r.json()["choices"][0]["message"]["content"]
