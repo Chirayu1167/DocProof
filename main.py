@@ -292,7 +292,7 @@ def llm_with_system(system, user):
     prov, key = cfg["llm_provider"], os.getenv("LLM_API_KEY")
     if not key:
         raise HTTPException(500, "LLM_API_KEY is not set. Copy .env.example to .env and add a key.")
-    model = os.getenv("LLM_MODEL", "") or ({"gemini": "gemini-3.8-flash", "groq": "llama-3.3-70b-versatile"}.get(prov, "gpt-5-mini"))
+    model = os.getenv("LLM_MODEL", "") or ({"gemini": "gemini-3.8-flash", "groq": "openai/gpt-oss-120b"}.get(prov, "gpt-5-mini"))
     try:
         if prov == "gemini":
             r = httpx.post(f"https://generativelanguage.googleapis.com/v1beta/models/{model}:generateContent",
