@@ -1,0 +1,141 @@
+{
+  "version": 1,
+  "description": "Evaluation manifest for the Intelligent Document Investigator. Ground truth references filenames/page/snippets (stable across runs), never chunk IDs (random per upload). Statuses are asserted; answer wording is not.",
+  "corpus": [
+    "1_vendor_proposal.txt",
+    "2_steering_minutes.txt",
+    "3_revised_schedule.txt",
+    "tests/fixtures/forecast_note.txt",
+    "tests/fixtures/milestone_table.pdf",
+    "tests/fixtures/scan_memo.png"
+  ],
+  "fixtures": {
+    "tests/fixtures/forecast_note.txt": "Qualifier case: forecast INR 11,00,000 vs approved INR 12,00,000 (must NOT auto-conflict).",
+    "tests/fixtures/milestone_table.pdf": "Table case: milestone plan grid (Testing 30 April 2027).",
+    "tests/fixtures/scan_memo.png": "OCR case: Pune site review 10 April 2027 exists ONLY in image form."
+  },
+  "tests": [
+    {
+      "id": "conflict_release_date",
+      "category": "conflict_detection",
+      "question": "What is the production release date?",
+      "expected_status": "conflicting",
+      "expected_conflict_type": "date",
+      "expected_claims": ["30 June 2027", "15 July 2027"],
+      "min_citations": 2,
+      "description": "Date conflict: proposal says 30 June 2027, revised schedule says 15 July 2027. Both claims must surface with real citations."
+    },
+    {
+      "id": "conflict_budget",
+      "category": "conflict_detection",
+      "question": "What is the budget?",
+      "expected_status": "conflicting",
+      "expected_conflict_type": "amount",
+      "expected_claims": ["12,00,000", "14,50,000"],
+      "min_citations": 2,
+      "description": "Amount conflict: INR 12,00,000 vs INR 14,50,000 across documents."
+    },
+    {
+      "id": "qualifier_forecast_approved",
+      "category": "conflict_qualifiers",
+      "question": "What is the approved budget for Project Atlas?",
+      "expected_status": "conflicting",
+      "expected_claims": ["12,00,000", "14,50,000"],
+      "forbidden_claim_values": [["A:INR:1100000.0", "A:INR:1200000.0"]],
+      "min_citations": 2,
+      "description": "Qualifier case: forecast 11L vs approved 12L must NOT be reported as a conflict pair (verifier: compatible), while the real 12L vs 14.5L conflict must still surface."
+    },
+    {
+      "id": "hint_supersedes",
+      "category": "resolution_hint",
+      "question": "What is the production release date?",
+      "expected_status": "conflicting",
+      "expected_claims": ["30 June 2027", "15 July 2027"],
+      "require_hint": true,
+      "min_citations": 2,
+      "description": "Hint case: the revised schedule explicitly supersedes the proposal, so a likely-newer hint (not a verdict) must be present."
+    },
+    {
+      "id": "supported_pilot_location",
+      "category": "supported_qa",
+      "question": "Where will the pilot go live?",
+      "expected_status": "supported",
+      "min_citations": 1,
+      "required_citations": [
+        {"filename": "1_vendor_proposal.txt", "page": 1, "snippet": "Pune campus"}
+      ],
+      "description": "Direct supported QA: pilot location is Pune campus."
+    },
+    {
+      "id": "supported_pilot_date",
+      "category": "cross_document",
+      "question": "What is the pilot date?",
+      "expected_status": "supported",
+      "min_citations": 2,
+      "required_citations": [
+        {"filename": "1_vendor_proposal.txt", "page": 1, "snippet": "pilot will go live on 15 March 2027"},
+        {"filename": "3_revised_schedule.txt", "page": 1, "snippet": "pilot date of 15 March 2027 is unchanged"}
+      ],
+      "description": "Cross-document synthesis: proposal sets the pilot date, revised schedule confirms it unchanged; no conflict may be manufactured."
+    },
+    {
+      "id": "supported_testing_milestone",
+      "category": "table_case",
+      "question": "When is the testing milestone?",
+      "expected_status": "supported",
+      "min_citations": 1,
+      "required_citations": [
+        {"filename": "milestone_table.pdf", "page": 1, "snippet": "30 April 2027"}
+      ],
+      "description": "Table case: answer comes from the milestone grid PDF."
+    },
+    {
+      "id": "compatible_steering",
+      "category": "compatible_evidence",
+      "question": "What did the steering committee confirm?",
+      "expected_status": "supported",
+      "min_citations": 1,
+      "forbid_conflicts": true,
+      "description": "Compatible evidence: committee confirms budget and location with no contradictions; no conflict may be reported."
+    },
+    {
+      "id": "unanswerable_trademark",
+      "category": "unanswerable",
+      "question": "Who owns the trademark?",
+      "expected_status": "insufficient_evidence",
+      "forbid_conflicts": true,
+      "description": "Unanswerable: no document names a trademark owner. Must abstain without invented facts or manufactured conflicts."
+    },
+    {
+      "id": "ambiguous_delivery",
+      "category": "ambiguous_question",
+      "question": "When is the delivery due?",
+      "allowed_statuses": ["conflicting", "insufficient_evidence"],
+      "min_citations": 2,
+      "description": "Ambiguous question: pilot, testing, handover and two production dates exist. The system must not answer with unjustified single-date certainty."
+    },
+    {
+      "id": "ocr_site_review",
+      "category": "ocr_case",
+      "question": "When is the Pune site review?",
+      "expected_status": "supported",
+      "min_citations": 1,
+      "needs_ocr": true,
+      "required_citations": [
+        {"filename": "scan_memo.png", "page": 1, "snippet": "10 April 2027"}
+      ],
+      "description": "OCR case: the site-review date exists ONLY in scanned/image content."
+    },
+    {
+      "id": "citation_support_terms",
+      "category": "citation_correctness",
+      "question": "What support does the vendor provide?",
+      "expected_status": "supported",
+      "min_citations": 1,
+      "required_citations": [
+        {"filename": "1_vendor_proposal.txt", "page": 1, "snippet": "email support during business hours"}
+      ],
+      "description": "Citation correctness: the cited page/chunk must contain the supporting quote verbatim."
+    }
+  ]
+}

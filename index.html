@@ -1,0 +1,164 @@
+<!doctype html>
+<html lang="en"><head><meta charset="utf-8">
+<meta name="viewport" content="width=device-width,initial-scale=1">
+<title>Document Investigator</title>
+<link rel="stylesheet" href="https://fonts.googleapis.com/css2?family=IBM+Plex+Sans:wght@400;500;600&family=Source+Serif+4:ital@0;1&display=swap">
+<style>
+:root{--bg:#eef1f4;--ink:#1b2430;--mute:#5d6877;--line:#d5dbe2;--card:#fff;--ok:#1f7a6d;--warn:#b9610b;--none:#6b7684}
+@media(prefers-color-scheme:dark){:root{--bg:#141a21;--ink:#e6eaef;--mute:#9aa5b3;--line:#2a333d;--card:#1c242d;--ok:#4fc1ae;--warn:#f0a050;--none:#93a0af}}
+*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.5 "IBM Plex Sans",system-ui,sans-serif}
+.app{display:grid;grid-template-columns:270px 1fr;min-height:100vh}
+aside{border-right:1px solid var(--line);padding:22px 18px}
+h1{font-size:17px;margin:0 0 4px}aside p{color:var(--mute);font-size:13px;margin:0 0 18px}
+.drop{display:block;border:1.5px dashed var(--line);border-radius:6px;padding:14px;text-align:center;cursor:pointer;color:var(--mute);font-size:13px}
+.drop:hover,.drop:focus-within{border-color:var(--ink);color:var(--ink)}.drop input{display:none}
+ul{list-style:none;padding:0;margin:16px 0 0}li{padding:8px 0;border-bottom:1px solid var(--line);font-size:13px;word-break:break-all}
+li small{display:block;color:var(--mute)}li.empty{color:var(--mute);border:0}
+main{padding:28px clamp(16px,4vw,48px);max-width:960px;width:100%}
+.ask{display:flex;gap:8px}.ask input{flex:1;padding:12px 14px;font:inherit;border:1px solid var(--line);border-radius:6px;background:var(--card);color:var(--ink)}
+button{font:inherit;cursor:pointer}.go{padding:0 20px;background:var(--ink);color:var(--bg);border:0;border-radius:6px;font-weight:600}
+:focus-visible{outline:2px solid var(--ok);outline-offset:2px}
+.banner{margin-top:22px;padding:16px 18px;background:var(--card);border:1px solid var(--line);border-left:6px solid var(--none);border-radius:6px}
+.banner.supported{border-left-color:var(--ok)}.banner.conflicting{border-left-color:var(--warn)}
+.banner b{font-size:13px;color:var(--none)}.supported b{color:var(--ok)}.conflicting b{color:var(--warn)}
+.banner p{margin:6px 0 0;font-size:17px}.conf{color:var(--mute);font-size:13px;margin-top:8px}
+h2{font-size:14px;margin:26px 0 10px;color:var(--mute)}
+.pair{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:6px}
+@media(max-width:760px){.app{grid-template-columns:1fr}aside{border-right:0;border-bottom:1px solid var(--line)}.pair{grid-template-columns:1fr}}
+.side{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px}
+.side.newer{border-color:var(--warn)}.side strong{display:block}
+blockquote{margin:8px 0;padding-left:10px;border-left:2px solid var(--line);font:italic 15px/1.5 "Source Serif 4",serif}
+.src{background:none;border:0;color:var(--ok);padding:0;text-decoration:underline;font-size:13px}
+.why{color:var(--mute);font-size:13px;margin:0 0 14px}.ev{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px}
+.tag{font-size:12px;color:var(--mute);border:1px solid var(--line);border-radius:10px;padding:0 7px;margin-left:6px}
+.panel{position:fixed;inset:0 0 0 auto;width:min(520px,100%);background:var(--card);border-left:1px solid var(--line);padding:18px;overflow:auto;transform:translateX(100%);transition:transform .18s}
+.panel.open{transform:none}.panel img{width:100%;border:1px solid var(--line)}.panel pre{white-space:pre-wrap;font:inherit}
+.rep{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}.rep td,.rep th{border:1px solid var(--line);padding:6px 8px;text-align:left}.rep th{color:var(--mute);font-weight:500}
+.pass{color:var(--ok);font-weight:600}.fail{color:#b3261e;font-weight:600}.skip{color:var(--warn);font-weight:600}
+.mode{display:inline-block;font-size:12px;border:1px solid var(--line);border-radius:10px;padding:0 8px;margin-left:6px;color:var(--mute)}
+.cmp{width:100%;border-collapse:collapse;font-size:13px;background:var(--card)}.cmp td,.cmp th{border:1px solid var(--line);padding:6px 8px;text-align:left;vertical-align:top}.cmp th{color:var(--mute);font-weight:500}
+.st{font-weight:600;white-space:nowrap}.st.ok{color:var(--ok)}.st.warn{color:var(--warn)}.st.mut{color:var(--mute)}.st.bad{color:#b3261e}
+details.whybox{margin-top:14px;background:var(--card);border:1px solid var(--line);border-radius:6px;padding:10px 14px}details.whybox summary{cursor:pointer;font-size:13px;color:var(--mute)}
+.trail{font-size:13px;color:var(--mute);margin:8px 0}.trail b{color:var(--ink)}
+.ck{list-style:none;padding:0;margin:8px 0}.ck li{padding:3px 0;font-size:13px}
+.row{display:flex;gap:8px;align-items:center;margin-top:10px}.row button{padding:8px 14px;background:var(--card);border:1px solid var(--line);border-radius:6px;color:var(--ink)}
+.chk{margin-right:7px;accent-color:var(--ok)}
+.claim{background:var(--card);border:1px solid var(--line);border-radius:6px;padding:12px 14px;margin-bottom:8px}
+.claim.newer{border-color:var(--warn)}
+.ctag{display:inline-block;font-size:11px;letter-spacing:.06em;color:var(--mute);border:1px solid var(--line);border-radius:10px;padding:1px 8px;margin-bottom:6px}
+.claim .val{display:block;font-size:16px;margin:2px 0 6px}
+.revtag{display:inline-block;font-size:11px;color:var(--warn);border:1px solid var(--warn);border-radius:10px;padding:1px 8px;margin-left:6px}
+.pulse{display:inline-block;animation:pl 1s infinite alternate;color:var(--mute)}
+@keyframes pl{from{opacity:.25}to{opacity:1}}
+.flow{list-style:none;padding:0;margin:8px 0}.flow li{padding:5px 0 5px 4px;font-size:13px;border-left:2px solid var(--line);margin-left:6px;padding-left:12px}
+.flow li:last-child{border-left-color:transparent}
+.dec{font-size:14px;margin:8px 0}
+.dec ul{margin:6px 0;padding-left:20px;font-size:13px;color:var(--ink)}
+@media(prefers-reduced-motion:reduce){.panel{transition:none}.pulse{animation:none}}
+</style></head><body><div class="app">
+<aside><h1>Document Investigator</h1><p>Answers come with sources. Disagreements are shown, not hidden.</p>
+<label class="drop"><input id="file" type="file" multiple accept=".pdf,.png,.jpg,.jpeg,.txt"><span id="up">Add PDFs, scans or text files</span></label>
+<ul id="docs"></ul>
+<div class="row"><button id="cmpbtn">Compare selected</button></div><p class="why" style="margin-top:6px">Tick two or more documents to compare their claims.</p>
+<h1 style="margin-top:22px">Evaluation</h1><p>Latest <span class="src" id="repbtn" role="button" tabindex="0" style="cursor:pointer">test report</span>, if generated.</p>
+<div id="repsum" class="why"></div></aside>
+<main><div class="ask"><input id="q" placeholder="Ask about your documents, e.g. What is the production release date?" aria-label="Question"><button class="go" id="go">Investigate</button></div>
+<div id="out"></div><div id="repout"></div></main></div>
+<div class="panel" id="panel"><button class="src" id="close">Close</button><div id="pbody"></div></div>
+<script>
+const $=s=>document.querySelector(s),esc=s=>String(s??"").replace(/[&<>"]/g,c=>({"&":"&amp;","<":"&lt;",">":"&gt;",'"':"&quot;"}[c]));
+const LABEL={supported:"Supported by the documents",conflicting:"Sources disagree",insufficient_evidence:"Not found in the uploaded documents"};
+let cites={};
+async function loadDocs(){let d;try{d=await(await fetch("/documents")).json()}catch(e){d=[]}
+docsCache=Array.isArray(d)?d:[];
+$("#docs").innerHTML=docsCache.length?docsCache.map(x=>`<li><label><input type="checkbox" class="chk" value="${esc(x.id)}"> ${esc(x.filename)}</label><small>${x.pages} page(s), ${x.ocr_pages} read with OCR${x.warning?" — "+esc(x.warning):""}</small></li>`).join(""):'<li class="empty">No documents yet. Add files to begin.</li>'}
+let docsCache=[];
+let uploading=false;
+$("#file").onchange=async e=>{if(uploading||!e.target.files.length)return;uploading=true;const f=new FormData();[...e.target.files].forEach(x=>f.append("files",x));$("#up").textContent="Reading documents...";
+try{const r=await fetch("/documents",{method:"POST",body:f});const d=await r.json().catch(()=>({}));
+if(!r.ok){$("#up").textContent="Upload failed: "+(d.detail||r.status);return}
+const bad=(Array.isArray(d)?d:[]).filter(x=>x.warning);$("#up").textContent=bad.length?`Added with warnings (${bad.length})`:"Add PDFs, scans or text files";loadDocs()}catch(err){$("#up").textContent="Upload failed: network error"}finally{uploading=false;e.target.value=""}};
+const src=id=>{const c=cites[id];return c?`<button class="src" data-d="${c.doc_id}" data-p="${c.page}">${esc(c.filename)}, p.${c.page}</button><span class="tag">${c.method==="ocr"?"OCR":"native text"}</span>`:""};
+let asking=false;
+async function ask(){const q=$("#q").value.trim();if(asking)return;
+if(!q){$("#out").innerHTML=`<div class="banner"><b>Ask first</b><p style="font-size:15px">Type a question above, then click Investigate.</p></div>`;$("#q").focus();return}
+asking=true;$("#go").disabled=true;
+$("#out").innerHTML='<p class="why">Investigating — examining the evidence before answering…</p><ul class="ck"><li><span class="pulse">●</span> Retrieving evidence</li><li><span class="st mut">○</span> Extracting claims</li><li><span class="st mut">○</span> Normalizing values</li><li><span class="st mut">○</span> Checking conflicts</li><li><span class="st mut">○</span> Generating grounded response</li></ul>';
+try{const r=await fetch("/investigate",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({question:q})});
+const d=await r.json().catch(()=>({}));if(!r.ok){$("#out").innerHTML=`<div class="banner"><b>Request failed</b><p style="font-size:15px">${esc(d.detail||"Something went wrong.")}</p></div>`;return}
+cites={};(d.citations||[]).forEach(c=>cites[c.id]=c);
+const status=LABEL[d.status]?d.status:"insufficient_evidence";
+const citedIds=(d.citations||[]).map(c=>c.id);
+const sum=d.investigation_summary||{},inv=d.investigation||{},checks=inv.checks||[];
+const dec=d.decision_reason||{};
+const stripC=s=>String(s||"").replace(/^Claim C\d+:\s*/,"");
+const STRC={STRONG:["ok","Strong evidence"],MODERATE:["mut","Moderate evidence"],INSUFFICIENT:["mut","Insufficient evidence"],CONFLICTING:["warn","Conflicting evidence"]};
+const st=(d.evidence_strength||{}).level,stp=STRC[st]||STRC.INSUFFICIENT;
+let h=`<div class="banner ${status}"><b>${LABEL[status]}</b><p>${esc(d.answer)}</p><div class="conf">Confidence: ${esc(d.confidence||"low")}. ${esc(d.confidence_reason||"")}</div><div class="conf">Evidence: <span class="st ${stp[0]}">${stp[1]}</span>${((d.evidence_strength||{}).reasons||[]).map(r=>" — "+esc(r)).join("")}</div></div>`;
+if(status==="insufficient_evidence"&&sum.passages_retrieved!=null)h+=`<p class="trail">Evidence examined: <b>${sum.documents_examined||0} document(s)</b>, <b>${sum.passages_retrieved||0} passage(s)</b>. No source explicitly identifies the requested information.</p>`;
+if(sum.passages_retrieved!=null){
+const ret=sum.retrieval||{},how=["BM25",ret.semantic&&ret.semantic!=="off"?("Semantic ("+ret.semantic+")"):null,ret.fusion||"RRF"].filter(Boolean).join(" + ");
+const frow=(icon,txt)=>`<li>${icon} ${txt}</li>`;
+h+=`<h2>Investigation</h2><ul class="flow">`
++frow('<span class="st ok">✓</span>',`<b>${sum.passages_retrieved} evidence passage(s)</b> retrieved <span class="why">${esc(how)}</span>`)
++frow('<span class="st ok">✓</span>',`<b>${sum.claims_extracted||0} claim(s)</b> extracted <span class="why">${sum.relevant_passages||0} passage(s) yielded claims · values normalized</span>`)
++frow(sum.conflicts_found?'<span class="st warn">⚠</span>':'<span class="st ok">✓</span>',`<b>${sum.claims_compared||0} compared</b> → <b>${sum.conflicts_found||0} conflict(s)</b>`)
++frow(status==="conflicting"?'<span class="st warn">⚠</span>':'<span class="st ok">✓</span>',`Final status: <b>${LABEL[status]}</b>`)+`</ul>`}
+const ckIcon=s=>s==="pass"?'<span class="st ok">✓</span>':s==="warn"?'<span class="st warn">⚠</span>':s==="fail"?'<span class="st bad">✗</span>':'<span class="st mut">ℹ</span>';
+if(dec.summary||checks.length){h+=`<details class="whybox"><summary>Why this result?</summary><div class="dec">${dec.summary?esc(dec.summary):""}${(dec.details||[]).length?`<ul>${dec.details.map(x=>`<li>${esc(x)}</li>`).join("")}</ul>`:""}</div><ul class="ck">${checks.map(c=>`<li>${ckIcon(c.state)} ${esc(c.label)}</li>`).join("")}</ul><div class="why">Final status: ${LABEL[status].toUpperCase()}</div></details>`}
+else if(checks.length)h+=`<details class="whybox"><summary>Why this result?</summary><ul class="ck">${checks.map(c=>`<li>${ckIcon(c.state)} ${esc(c.label)}</li>`).join("")}</ul><div class="why">Final status: ${LABEL[status].toUpperCase()}</div></details>`;
+if((d.conflicts||[]).length){h+="<h2>Conflicts</h2>";d.conflicts.forEach(c=>{const attr=String(c.field||"").split(":").pop().trim()||c.field;
+const s=(k,tag)=>{const newer=c.likely_newer===c[k].cite;return `<div class="side ${newer?"newer":""}"><span class="ctag">${tag} · ${esc(attr)}</span>${newer?'<span class="revtag">↻ REVISED SOURCE</span>':""}<strong class="val">${esc(stripC(c[k].claim))}</strong><blockquote>${esc(c[k].quote)}</blockquote>${src(c[k].cite)}${newer?'<div class="why">Likely more current: '+esc(c.newer_reason)+"</div>":""}</div>`};
+h+=`<div class="pair">${s("a","CLAIM A")}${s("b","CLAIM B")}</div><p class="why"><span class="st warn">⚠ CONFLICT</span> — ${esc(stripC(c.a.claim))} ≠ ${esc(stripC(c.b.claim))}. <b>${esc(c.field)}:</b> ${esc(c.reason)} Unresolved, please verify with the document owner.</p>`})}
+const supp=(inv.claims||[]).filter(c=>citedIds.includes(c.citation_id));
+if(status==="supported"&&supp.length){h+="<h2>Supporting claims</h2>"+supp.map(c=>{const p=cites[c.citation_id]||{};return `<div class="claim"><span class="ctag">${esc(c.attribute)}</span><strong class="val">${esc(c.value)}</strong>${src(c.citation_id)}${p.text?`<blockquote>${esc(p.text)}</blockquote>`:""}</div>`}).join("")}
+if((d.missing||[]).length)h+=`<h2>Missing</h2><p class="why">${d.missing.map(esc).join("; ")}</p>`;
+h+=(status==="insufficient_evidence"?"<h2>Closest evidence</h2>":"<h2>Evidence</h2>")+((d.citations||[]).map(c=>`<div class="ev"><span class="tag">STORED PASSAGE</span> ${src(c.id)} <span class="why">${esc(c.section)}</span><blockquote>${esc(c.text)}</blockquote></div>`).join("")||'<p class="why">No evidence returned.</p>');
+$("#out").innerHTML=h}catch(err){$("#out").innerHTML='<div class="banner"><b>Request failed</b><p style="font-size:15px">Network error. Check the server is running and try again.</p></div>'}finally{asking=false;$("#go").disabled=false}}
+if($("#go")){$("#go").onclick=ask}else{console.error("Investigate button (#go) not found")}
+if($("#q")){$("#q").onkeydown=e=>{if(e.key==="Enter")ask();};}
+window.addEventListener("unhandledrejection",()=>{try{const o=document.querySelector("#out");if(o&&!o.innerHTML.trim())o.innerHTML='<div class="banner"><b>Request failed</b><p style="font-size:15px">Something went wrong. Please try again.</p></div>'}catch(_){}});
+document.addEventListener("click",async e=>{const b=e.target.closest(".src[data-d]");if(!b)return;
+const nm=((docsCache.find(x=>x.id===b.dataset.d)||{}).filename)||((Object.values(cites).find(c=>c.doc_id===b.dataset.d)||{}).filename)||"";
+const head=nm?`<div class="why"><b>${esc(nm)}</b> · page ${esc(b.dataset.p)} — exact stored passage below</div>`:"";
+try{const r=await fetch(`/documents/${b.dataset.d}/pages/${b.dataset.p}`);
+if(!r.ok){$("#pbody").innerHTML=head+`<pre>Page preview unavailable (${r.status}).</pre>`;$("#panel").classList.add("open");return}
+const ct=r.headers.get("content-type")||"";
+$("#pbody").innerHTML=head+(ct.startsWith("image")?`<img alt="Source page" src="${r.url}">`:`<pre>${esc(await r.text())}</pre>`);$("#panel").classList.add("open")}catch(err){$("#pbody").innerHTML=head+"<pre>Page preview unavailable (network error).</pre>";$("#panel").classList.add("open")}});
+$("#close").onclick=()=>$("#panel").classList.remove("open");loadDocs();
+const METERS=[["citation_validity","Citation validity"],["citation_recall","Citation recall"],["conflict_precision","Conflict precision"],["conflict_recall","Conflict recall"],["conflict_f1","Conflict F1"],["abstention_precision","Abstention precision"],["unsupported_claim_rate","Unsupported-claim rate"],["recall_at_5","Recall@5"],["recall_at_10","Recall@10"]];
+const pct=v=>v==null?"N/A":(v<=1&&v>=0?(v*100).toFixed(1)+"%":v);
+async function loadReport(){const el=$("#repout"),sum=$("#repsum");el.innerHTML='<p class="why">Loading report...</p>';
+try{const r=await fetch("/test-report");const d=await r.json().catch(()=>({}));
+if(!r.ok){el.innerHTML="";sum.textContent="No report yet ("+(d.detail||r.status)+"). Run python -m tests.run_eval.";return}
+const s=d.summary||{},m=d.metrics||{},l=d.latency||{};
+sum.innerHTML=`<span class="${s.failed?"fail":"pass"}">${s.failed?"FAIL":"PASS"}</span> ${s.passed}/${s.total} passed${s.skipped?`, ${s.skipped} skipped`:""}<span class="mode">${esc((d.mode||"unknown").toUpperCase())}</span>`;
+let h=`<h2>Evaluation report <span class="mode">${esc((d.mode||"unknown").toUpperCase())}</span></h2>`;
+h+=`<table class="rep"><tr><th>Metric</th><th>Value</th></tr>`+METERS.map(([k,label])=>`<tr><td>${label}</td><td>${pct(m[k])}</td></tr>`).join("");
+const lat=l.mean_ms!=null?(l.p95_ms!=null?`${l.mean_ms}/${l.median_ms}/${l.p95_ms} ms (mean/median/p95)`:`${l.mean_ms}/${l.median_ms} ms (mean/median; ${esc(l.p95_note||"no p95")})`):"N/A";
+h+=`<tr><td>Latency (investigate)</td><td>${esc(lat)}</td></tr></table>`;
+const bad=(d.tests||[]).filter(t=>!t.passed&&!t.skipped),sk=(d.tests||[]).filter(t=>t.skipped);
+if(bad.length)h+=`<h2>Failed tests (${bad.length})</h2>`+bad.map(t=>`<div class="ev"><span class="fail">FAIL</span> <b>${esc(t.id)}</b> <span class="why">${esc(t.category||"")}</span><br><span class="why">Q: ${esc(t.question||"")}</span><br><span class="why">Expected: ${esc(JSON.stringify(t.expected))} — got: ${esc(t.actual_status)}</span><br>${(t.failures||[]).map(f=>esc(f)).join("<br>")}</div>`).join("");
+if(sk.length)h+=`<h2>Skipped (${sk.length})</h2>`+sk.map(t=>`<div class="ev"><span class="skip">SKIP</span> <b>${esc(t.id)}</b> <span class="why">${esc(t.reason||"")}</span></div>`).join("");
+if(d.stub_notes)h+=`<p class="why">${esc(d.stub_notes)}</p>`;
+el.innerHTML=h}catch(err){el.innerHTML="";sum.textContent="Report unavailable (network error)."}};
+$("#repbtn").onclick=loadReport;$("#repbtn").onkeydown=e=>{if(e.key==="Enter")loadReport();};
+let comparing=false;
+async function compareDocs(){const ids=[...document.querySelectorAll(".chk:checked")].map(x=>x.value);
+if(comparing)return;if(ids.length<2){$("#out").innerHTML='<div class="banner"><b>Compare</b><p style="font-size:15px">Tick at least two documents first.</p></div>';return}
+comparing=true;$("#out").innerHTML='<p class="why">Comparing documents...</p>';
+try{const r=await fetch("/compare",{method:"POST",headers:{"Content-Type":"application/json"},body:JSON.stringify({doc_ids:ids})});
+const d=await r.json().catch(()=>({}));if(!r.ok){$("#out").innerHTML=`<div class="banner"><b>Compare failed</b><p style="font-size:15px">${esc(d.detail||"Something went wrong.")}</p></div>`;return}
+const docs=d.documents||[],rows=d.rows||[],sum=d.summary||{};
+const VI={compatible:['<span class="st ok">✓ Compatible</span>'],conflict:['<span class="st warn">⚠ Conflict</span>'],needs_review:['<span class="st mut">ℹ Needs review</span>'],info:['<span class="st mut">ℹ Difference</span>']};
+rows.forEach((row,ri)=>row.entries.forEach((e,ei)=>{const id=`cmp${ri}_${ei}`;e._ref=id;cites[id]={id,doc_id:e.doc_id,page:e.page,filename:e.filename,method:e.method||"text"}}));
+let h=`<div class="banner"><b>Document comparison</b><p style="font-size:15px">${docs.map(x=>esc(x.filename)).join("  vs  ")}</p><div class="conf">${sum.conflicts||0} conflict(s), ${sum.needs_review||0} need review, ${sum.compatible||0} compatible</div></div>`;
+h+=rows.length?`<h2>Claims</h2><table class="cmp"><tr><th>Subject · attribute</th>${docs.map(x=>`<th>${esc(x.filename)}</th>`).join("")}<th>Result</th></tr>`+rows.map(row=>{
+const cells=docs.map(x=>{const e=row.entries.find(y=>y.doc_id===x.doc_id);
+return `<td>${e?`<strong>${esc(e.value)}</strong>${e.qualifiers&&e.qualifiers.length?` <span class="why">(${e.qualifiers.map(esc).join(", ")})</span>`:""}<br><button class="src" data-d="${e.doc_id}" data-p="${e.page}">${esc(e.filename)}, p.${e.page}</button>`:'<span class="why">—</span>'}</td>`}).join("");
+return `<tr><td>${esc(row.subject)} · ${esc(row.attribute)}<br><span class="why">${esc(row.value_type)}</span></td>${cells}<td>${VI[row.verdict][0]}<br><span class="why">${esc(row.reason)}</span>${row.hint?`<br><span class="why">↻ Revised source: ${esc(row.hint.filename)} — ${esc(row.hint.reason)}</span>`:""}</td></tr>`}).join("")+"</table>"
+:'<p class="why">No comparable claims found across the selected documents.</p>';
+if(d.note)h+=`<p class="why">${esc(d.note)}</p>`;
+$("#out").innerHTML=h}catch(err){$("#out").innerHTML='<div class="banner"><b>Compare failed</b><p style="font-size:15px">Network error. Check the server is running and try again.</p></div>'}finally{comparing=false}}
+$("#cmpbtn").onclick=compareDocs;
+</script></body></html>

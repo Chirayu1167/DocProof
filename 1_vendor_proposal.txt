@@ -1,0 +1,13 @@
+Project Atlas - Vendor Proposal
+
+Delivery Timeline
+
+The pilot will go live on 15 March 2027 at the Pune campus. The production release will be completed on 30 June 2027, subject to client approvals.
+
+Budget
+
+The total approved budget for Project Atlas is INR 12,00,000, covering development, testing and two months of support.
+
+Support
+
+The vendor will provide email support during business hours for the first two months after production release.

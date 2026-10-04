@@ -1,0 +1,16 @@
+Harbor Transit Authority
+HarborLink Revised Service Update
+Date
+22 April 2026
+
+Status
+This update supersedes the schedule and budget in the original Fare System Memo.
+
+1. Revised Schedule
+The production release date has been revised from 12 May 2026 to 28 May 2026. The earlier 12 May date is superseded by this document. The pilot launched on 20 April 2026, as planned.
+
+2. Revised Budget
+The approved budget has been updated to USD 47,500. The Finance team approved the revision on 18 April 2026.
+
+3. Production Release
+Production release of HarborLink v3.1.0 is now set for 28 May 2026.

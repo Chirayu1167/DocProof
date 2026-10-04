@@ -1,0 +1,13 @@
+Harbor Transit Authority
+HarborLink Fare System Memo
+Date
+4 April 2026
+
+1. Service Overview
+HarborLink is the Authority's contactless fare platform for buses and ferries. This memo sets out the rollout plan for system version v3.1.0, including new validator hardware at all gates.
+
+2. Release Schedule
+The production release date is 12 May 2026. The pilot will launch on 20 April 2026 with 5 stations.
+
+3. Budget
+The approved budget for the rollout is USD 40,000, covering hardware, software and two months of support.
