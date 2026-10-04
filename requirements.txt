@@ -8,4 +8,3 @@ httpx
 python-dotenv
 pillow
 pytesseract
-sentence-transformers
